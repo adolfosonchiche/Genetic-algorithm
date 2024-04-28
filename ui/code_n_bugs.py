@@ -1,10 +1,14 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox
+from back.node import Node
+from back.street import Street
 
-class Application(tk.Tk):
+
+class CodeNBugs(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Nodos y Conexiones")
+        self.countNode = 1
+        self.title("Code 'n Bugs")
         self.canvas = tk.Canvas(self, width=800, height=600, bg="white")
         self.canvas.pack()
         self.nodes = []
@@ -12,35 +16,34 @@ class Application(tk.Tk):
         self.connecting_node = None
 
         self.menubar = tk.Menu(self)
-        self.nodemenu = tk.Menu(self.menubar)
-        self.nodemenu.add_command(label="Agregar Nodo", command=self.create_new_node)
-        self.menubar.add_cascade(label="Nodos", menu=self.nodemenu)
+        self.node_menu = tk.Menu(self.menubar)
+        self.node_menu.add_command(label="Agregar Nodo", command=self.create_new_node)
+        self.menubar.add_cascade(label="Nodos", menu=self.node_menu)
 
-        self.filemenu = tk.Menu(self.menubar)
-        self.filemenu.add_command(label="Reiniciar", command=self.reset)
-        self.filemenu.add_command(label="Cerrar", command=self.quit)
-        self.menubar.add_cascade(label="Archivo", menu=self.filemenu)
+        self.file_menu = tk.Menu(self.menubar)
+        self.file_menu.add_command(label="Reiniciar", command=self.reset)
+        self.file_menu.add_command(label="Cerrar", command=self.quit)
+        self.menubar.add_cascade(label="Archivo", menu=self.file_menu)
 
-        self.runmenu = tk.Menu(self.menubar)
-        self.runmenu.add_command(label="Ejecutar", command=self.run)
-        self.menubar.add_cascade(label="Ejecución", menu=self.runmenu)
+        self.run_menu = tk.Menu(self.menubar)
+        self.run_menu.add_command(label="Ejecutar", command=self.run)
+        self.menubar.add_cascade(label="Ejecución", menu=self.run_menu)
 
         self.config(menu=self.menubar)
 
         self.canvas.bind("<B1-Motion>", self.move_node)
-        #self.canvas.bind("<Button-3>", self.show_node_menu)
         self.canvas.bind("<Shift-Button-1>", self.start_connecting_nodes)
         self.canvas.bind("<Shift-Button-3>", self.stop_connecting_nodes)
 
     def create_new_node(self):
-        self.new_node = Node(0, 0)
+        self.new_node = Node(0, 0, self.countNode)
         self.canvas.bind("<Button-1>", self.place_new_node)
+        self.countNode = self.countNode + 1
 
     def place_new_node(self, event):
         self.new_node.x, self.new_node.y = event.x, event.y
         self.nodes.append(self.new_node)
         self.new_node.draw(self.canvas)
-        #self.canvas.tag_bind(self.new_node.oval, "<Button-1>", lambda e: self.new_node.edit_properties(self.canvas))
         self.canvas.tag_bind(self.new_node.oval, "<Button-3>", self.show_node_context_menu)
         self.canvas.unbind("<Button-1>")
         self.new_node = None
@@ -72,7 +75,8 @@ class Application(tk.Tk):
     def draw_temporary_line(self, event):
         if self.connecting_node:
             self.canvas.delete("temp_line")
-            line = self.canvas.create_line(self.connecting_node.x, self.connecting_node.y, event.x, event.y, width=2, arrow="last", tags="temp_line")
+            line = self.canvas.create_line(self.connecting_node.x, self.connecting_node.y, event.x, event.y, width=2,
+                                           arrow="last", tags="temp_line")
 
     def stop_connecting_nodes(self, event):
         self.canvas.unbind("<B1-Motion>")
@@ -106,11 +110,10 @@ class Application(tk.Tk):
         print(label)
         if label:
             self.canvas.delete(node.label)
-            #canvas.create_text(self.x, self.y, text="fatima", tags="node_label")
-            #self.label = canvas.create_text(self.x, self.y, text="fatima", tags="node_label")
             node.label = self.canvas.create_text(node.x, node.y, text=label, font=("Arial", 12))
 
     def remove_node(self, node):
+        node.remove_streets_from_the_node(self.canvas)
         self.canvas.delete(node.oval)
         self.canvas.delete(node.label)
         for other_node in self.nodes:
@@ -121,6 +124,7 @@ class Application(tk.Tk):
     def reset(self):
         self.canvas.delete("all")
         self.nodes = []
+        self.countNode = 1
 
     def run(self):
         # Aquí puedes agregar la lógica para ejecutar el programa
