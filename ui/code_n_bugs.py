@@ -1,7 +1,10 @@
 import tkinter as tk
+from os import fork
 from tkinter import simpledialog, messagebox
 from back.node import Node
-from back.street import Street
+import pickle
+import json
+from tkinter import filedialog
 
 
 class CodeNBugs(tk.Tk):
@@ -14,6 +17,8 @@ class CodeNBugs(tk.Tk):
         self.nodes = []
         self.new_node = None
         self.connecting_node = None
+        self.connection_input = False
+        self.event_input = None
 
         self.menubar = tk.Menu(self)
         self.node_menu = tk.Menu(self.menubar)
@@ -22,6 +27,10 @@ class CodeNBugs(tk.Tk):
 
         self.file_menu = tk.Menu(self.menubar)
         self.file_menu.add_command(label="Reiniciar", command=self.reset)
+        self.file_menu.add_command(label="Guardar", command=self.save_canvas)
+        self.file_menu.add_command(label="Cargar", command=self.load_canvas)
+        self.file_menu.add_command(label="Guardar como JSON", command=self.save_canvas_to_json)
+        self.file_menu.add_command(label="Cargar desde JSON", command=self.load_canvas_from_json)
         self.file_menu.add_command(label="Cerrar", command=self.quit)
         self.menubar.add_cascade(label="Archivo", menu=self.file_menu)
 
@@ -35,20 +44,96 @@ class CodeNBugs(tk.Tk):
         self.canvas.bind("<Shift-Button-1>", self.start_connecting_nodes)
         self.canvas.bind("<Shift-Button-3>", self.stop_connecting_nodes)
 
+    def save_canvas_to_json(self):
+        file_name = tk.filedialog.asksaveasfilename(defaultextension=".json")
+        if file_name:
+            canvas_data = self.canvas.find_all()
+            canvas_json = []
+            for item in canvas_data:
+                item_type = self.canvas.type(item)
+                item_coords = self.canvas.coords(item)
+                item_json = {
+                    "type": item_type,
+                    "coords": list(item_coords)
+                }
+                canvas_json.append(item_json)
+
+            with open(file_name, "w") as file:
+                json.dump(canvas_json, file)
+
+    def load_canvas_from_json(self):
+        file_name = tk.filedialog.askopenfilename(defaultextension=".json")
+        if file_name:
+            self.canvas.delete("all")
+            with open(file_name, "r") as file:
+                canvas_json = json.load(file)
+                for item_json in canvas_json:
+                    item_type = item_json["type"]
+                    item_coords = item_json["coords"]
+                    if item_type == "line":
+                        self.canvas.create_line(*item_coords)
+                    elif item_type == "oval":
+                        self.canvas.create_oval(*item_coords)
+
+    def save_canvas(self):
+        file_name = tk.filedialog.asksaveasfilename(defaultextension=".pkl")
+        if file_name:
+            data = {
+                "nodes": self.nodes,
+                "canvas_data": self.canvas.find_all()
+            }
+            with open(file_name, "wb") as file:
+                pickle.dump(self.nodes, file)
+
+    def load_canvas(self):
+        file_name = tk.filedialog.askopenfilename(defaultextension=".pkl")
+        if file_name:
+            with open(file_name, "rb") as file:
+                data = pickle.load(file)
+                self.nodes = data
+                self.canvas.delete("all")
+                print(self.nodes)
+                for node in self.nodes:
+                    print(isinstance(node, Node))
+                    node.oval = self.canvas.create_oval(node.x - node.radius, node.y - node.radius,
+                                                        node.x + node.radius, node.y + node.radius,
+                                                        fill="white", outline="black", tags="node")
+                    node.label = self.canvas.create_text(node.x, node.y, text="nodo " + str(node.id), tags="node_label")
+                    self.canvas.tag_bind(node.oval, "<Button-3>", self.show_node_context_menu)
+                    self.canvas.bind("<B1-Motion>", self.move_node)
+                for node in self.nodes:
+                    self.filter_connection(node, node.connections)
+
+    def filter_connection(self, node, connections):
+        """Filtra las calles de la lista 'connections' según las condiciones."""
+        for street in connections:
+            #node.connect(street.other_node, self.canvas)
+            if not street.its_input and street.its_output and street.its_connection:
+                print(street.line)
+                line = self.canvas.create_line(street.x1, street.y1, street.x2, street.y2, width=4,
+                                               arrow="last", tags=("connection_line",))
+                street.line = line
+                self.canvas.tag_bind(line, "<Button-1>", lambda e: node.remove_line(line, self.canvas))
+                self.canvas.tag_bind(line, "<Button-3>",
+                                     lambda e: node.show_connection_properties(node, self.canvas, line,
+                                                                               street.other_node))
+
     def create_new_node(self):
         self.new_node = Node(0, 0, self.countNode)
         self.canvas.bind("<Button-1>", self.place_new_node)
         self.countNode = self.countNode + 1
 
     def place_new_node(self, event):
-        self.new_node.x, self.new_node.y = event.x, event.y
-        self.nodes.append(self.new_node)
-        self.new_node.draw(self.canvas)
-        self.canvas.tag_bind(self.new_node.oval, "<Button-3>", self.show_node_context_menu)
-        self.canvas.unbind("<Button-1>")
+        if self.new_node is not None:
+            self.new_node.x, self.new_node.y = event.x, event.y
+            self.nodes.append(self.new_node)
+            self.new_node.draw(self.canvas)
+            self.canvas.tag_bind(self.new_node.oval, "<Button-3>", self.show_node_context_menu)
+            self.canvas.bind("<B1-Motion>", self.move_node)
         self.new_node = None
 
     def move_node(self, event):
+        print("mover nodo")
         node_moved = None
         for node in self.nodes:
             if (event.x - node.x) ** 2 + (event.y - node.y) ** 2 <= node.radius ** 2:
@@ -71,6 +156,11 @@ class CodeNBugs(tk.Tk):
                 self.connecting_node = node
                 self.canvas.bind("<B1-Motion>", self.draw_temporary_line)
                 break
+        if not self.connecting_node:
+            self.connection_input = True
+            self.event_input = event
+            self.canvas.bind("<B1-Motion>", self.draw_temporary_line)
+            #self.connecting_node.connect_out(self.canvas, event.x, event.y)
 
     def draw_temporary_line(self, event):
         if self.connecting_node:
@@ -81,10 +171,19 @@ class CodeNBugs(tk.Tk):
     def stop_connecting_nodes(self, event):
         self.canvas.unbind("<B1-Motion>")
         self.canvas.delete("temp_line")
+        connection = False
         for node in self.nodes:
             if (event.x - node.x) ** 2 + (event.y - node.y) ** 2 <= node.radius ** 2:
-                if node != self.connecting_node:
+                if self.connection_input:
+                    node.connect_in(self.canvas, self.event_input.x, self.event_input.y)
+                    self.connection_input = False
+                    connection = True
+                    self.event_input = None
+                elif node != self.connecting_node:
                     self.connecting_node.connect(node, self.canvas)
+                    connection = True
+        if not connection:
+            self.connecting_node.connect_out(self.canvas, event.x, event.y)
         self.connecting_node = None
 
     def show_node_menu(self, event):

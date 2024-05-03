@@ -3,7 +3,7 @@ from random import random
 
 class Street:
     def __init__(self, other_node, its_input, its_output, its_connection, min_capacity,
-                 max_capacity, traffic_lights, line):
+                 max_capacity, traffic_lights, line, x1, y1, x2, y2):
         self.other_node = other_node
         self.cars = 0
         self.its_input = its_input
@@ -14,3 +14,7 @@ class Street:
         self.traffic_lights = traffic_lights
         self.label_text = None
         self.line = line
+        self.x1 = x1
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2

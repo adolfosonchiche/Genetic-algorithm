@@ -54,16 +54,6 @@ class StreetProperties(tk.Toplevel):
             self.found_street.max_capacity = self.entry_traffic_lights.get()
             self.found_street.traffic_lights = self.entry_max_capacity.get()
             self.draw_label(self.found_street.min_capacity, self.found_street.max_capacity)
-        else:
-            min_capacity = self.entry_min_capacity.get()
-            max_capacity = self.entry_traffic_lights.get()
-            traffic_lights = self.entry_max_capacity.get()
-            print("No se encontró ningún Street con ese other_node")
-            self.found_street = Street(self.other_node, False, False, True,
-                                       min_capacity, max_capacity, traffic_lights, self.line
-                                       )
-            self.node.connections.append(self.found_street)
-            self.draw_label(min_capacity, max_capacity)
         self.destroy()
 
     def draw_label(self, min_capacity, max_capacity):
