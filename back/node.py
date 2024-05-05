@@ -1,6 +1,8 @@
 from back.street import Street
+from ui.draw.node_ob import NodeOb
 from ui.node_properties_dialog import NodePropertiesDialog
 from ui.street_properties_dialog import StreetProperties
+from ui.draw.line_ob import LineOb
 
 
 class Node:
@@ -15,14 +17,15 @@ class Node:
         self.connections = []
         self.oval = None
         self.label = None
+        self.line_ob = LineOb()
+        self.node_ob = NodeOb()
+        self.id_street = 1
 
-    def draw(self, canvas):
-        self.oval = canvas.create_oval(self.x - self.radius, self.y - self.radius,
-                                       self.x + self.radius, self.y + self.radius,
-                                       fill="white", outline="black", tags="node")
-        self.label = canvas.create_text(self.x, self.y, text="nodo " + str(self.id), tags="node_label")
+    def draw(self, canvas, code_n_bugs):
+        self.oval = self.node_ob.draw_oval(self, canvas, code_n_bugs)
+        self.label = self.node_ob.draw_label(self, canvas)
 
-    def connect(self, other_node, canvas):
+    def connect_node(self, other_node, canvas):
         dx = other_node.x - self.x
         dy = other_node.y - self.y
         dist = (dx ** 2 + dy ** 2) ** 0.5
@@ -32,18 +35,16 @@ class Node:
         y1 = self.y + self.radius * dy
         x2 = other_node.x - other_node.radius * dx
         y2 = other_node.y - other_node.radius * dy
-
-        line = canvas.create_line(x1, y1, x2, y2, width=4, arrow="last", tags=("connection_line",))
+        line = self.line_ob.draw_line(x1, y1, x2, y2, canvas, self, other_node, self.id_street)
         other_street = Street(self, True, False, True,
-                              0, 0, 0, line, x1, y1, x2, y2
+                              0, 0, 0, line, x1, y1, x2, y2, self.id_street
                               )
         other_node.connections.append(other_street)
         node_street = Street(other_node, False, True, True,
-                             0, 0, 0, line, x1, y1, x2, y2
+                             0, 0, 0, line, x1, y1, x2, y2, self.id_street
                              )
         self.connections.append(node_street)
-        canvas.tag_bind(line, "<Button-1>", lambda e: self.remove_line(line, canvas))
-        canvas.tag_bind(line, "<Button-3>", lambda e: self.show_connection_properties(self, canvas, line, other_node))
+        self.id_street = self.id_street + 1
 
     def connect_out(self, canvas, x, y):
         dx = x - self.x
@@ -53,17 +54,14 @@ class Node:
         dy /= dist
         x1 = self.x + self.radius * dx
         y1 = self.y + self.radius * dy
-        x2 = x #* dx
-        y2 = y #* dy
-
-        line = canvas.create_line(x1, y1, x2, y2, width=4, arrow="last", tags=("connection_line",))
+        x2 = x
+        y2 = y
+        line = self.line_ob.draw_line(x1, y1, x2, y2, canvas, self, None, self.id_street)
         node_street = Street(None, False, True, False,
-                             0, 0, 0, line, x1, y1, x2, y2
+                             0, 0, 0, line, x1, y1, x2, y2, self.id_street
                              )
         self.connections.append(node_street)
-        canvas.tag_bind(line, "<Button-1>", lambda e: self.remove_line(line, canvas))
-        canvas.tag_bind(line, "<Button-3>",
-                        lambda e: self.show_connection_properties(self, canvas, line, None))
+        self.id_street = self.id_street + 1
 
     def connect_in(self, canvas, x, y):
         dx = self.x - x
@@ -71,46 +69,37 @@ class Node:
         dist = (dx ** 2 + dy ** 2) ** 0.5
         dx /= dist
         dy /= dist
-        x1 = x #+ 25 * dx
-        y1 = y #+ 25 * dy
+        x1 = x
+        y1 = y
         x2 = self.x - self.radius * dx
         y2 = self.y - self.radius * dy
-
-        line = canvas.create_line(x1, y1, x2, y2, width=4, arrow="last", tags=("connection_line",))
+        line = self.line_ob.draw_line(x1, y1, x2, y2, canvas, self, None, self.id_street)
         node_street = Street(None, True, False, False,
-                             0, 0, 0, line, x1, y1, x2, y2
+                             0, 0, 0, line, x1, y1, x2, y2, self.id_street
                              )
         self.connections.append(node_street)
-        canvas.tag_bind(line, "<Button-1>", lambda e: self.remove_line(line, canvas))
-        canvas.tag_bind(line, "<Button-3>",
-                        lambda e: self.show_connection_properties(self, canvas, line, None))
+        self.id_street = self.id_street + 1
 
     def edit_properties(self, canvas):
         dialog = NodePropertiesDialog(canvas.master, self)
         canvas.wait_window(dialog)
         canvas.itemconfig(self.oval, fill="cyan")
 
-    @staticmethod
-    def show_connection_properties(self, canvas, line, other_node):
-        connection_properties = StreetProperties(self, canvas, line, other_node)
+    def show_connection_properties(self, node, canvas, line, other_node, id_street):
+        connection_properties = StreetProperties(node, canvas, line, other_node, id_street, self.line_ob)
         canvas.wait_window(connection_properties)
 
-    def find_street_by_other_node(self, other_node):
-        street = next(
-            (street for street in self.connections if isinstance(street, Street) and street.other_node == other_node),
-            None)
-        return street
-
-    def remove_line(self, line, canvas):
-        found_street = self.find_street_by_other_line(line)
-        canvas.delete(line)
+    def remove_line(self, line, canvas, id_street):
+        found_street = self.find_street_by_other_line(id_street, line)
         if found_street:
             canvas.delete(found_street.label_text)
+            canvas.delete(found_street.line)
             self.connections.remove(found_street)
 
-    def find_street_by_other_line(self, line):
+    def find_street_by_other_line(self, id_street, line):
         street = next(
-            (street for street in self.connections if isinstance(street, Street) and street.line == line),
+            (street for street in self.connections if isinstance(street, Street) and (street.id_street == id_street
+                                                                                      and street.line == line)),
             None)
         return street
 

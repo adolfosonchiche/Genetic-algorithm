@@ -5,18 +5,19 @@ from back.street import Street
 
 
 class StreetProperties(tk.Toplevel):
-    def __init__(self, node, parent, line, other_node):
+    def __init__(self, node, parent, line, other_node, id_street, line_obj):
         super().__init__(parent.master)
         self.canvas = parent
         self.title("Propiedades de la Calle")
         self.line = line
         self.node = node
         self.other_node = other_node
+        self.line_obj = line_obj
         #buscamos si ya existe valores a esta linea
-        self.found_street = node.find_street_by_other_node(other_node)
+        self.found_street = node.find_street_by_other_line(id_street, line)
 
         self.frame = tk.Frame(self)
-        self.frame.pack(padx=50, pady=50)
+        self.frame.pack(padx=50, pady=60)
 
         self.label_max_capacity = tk.Label(self.frame, text="Capacidad máxima:")
         self.label_max_capacity.grid(row=0, column=0, sticky="e")
@@ -32,6 +33,13 @@ class StreetProperties(tk.Toplevel):
         self.label_traffic_lights.grid(row=2, column=0, sticky="e")
         self.entry_traffic_lights = tk.Entry(self.frame)
         self.entry_traffic_lights.grid(row=2, column=1)
+
+        if not self.found_street.its_connection and self.found_street.its_input:
+            self.label_max_cars = tk.Label(self.frame, text="Carros Iniciales:")
+            self.label_max_cars.grid(row=3, column=0, sticky="e")
+            self.entry_max_cars = tk.Entry(self.frame)
+            self.entry_max_cars.grid(row=3, column=1)
+            self.entry_max_cars.insert(0, str(self.found_street.cars))
 
         self.button_save = tk.Button(self, text="Guardar", command=self.save_properties)
         self.button_save.pack(pady=10)
@@ -53,16 +61,9 @@ class StreetProperties(tk.Toplevel):
             self.found_street.min_capacity = self.entry_min_capacity.get()
             self.found_street.max_capacity = self.entry_traffic_lights.get()
             self.found_street.traffic_lights = self.entry_max_capacity.get()
-            self.draw_label(self.found_street.min_capacity, self.found_street.max_capacity)
+            if not self.found_street.its_connection and self.found_street.its_input:
+                self.found_street.cars = self.entry_max_cars.get()
+            self.line_obj.draw_label_line(self.found_street.min_capacity, self.found_street.max_capacity
+                                          , self.found_street, self.canvas, self.line)
         self.destroy()
 
-    def draw_label(self, min_capacity, max_capacity):
-        x1, y1, x2, y2 = self.canvas.coords(self.line)
-        x_center = (x1 + x2) / 2
-        y_center = (y1 + y2) / 2
-        label_text = f"Capacidad mínima: {min_capacity}\n\nCapacidad máxima: {max_capacity}"
-
-        if self.found_street.label_text:
-            self.canvas.delete(self.found_street.label_text)
-        self.canvas.label = self.canvas.create_text(x_center, y_center, text=label_text, font=("Arial", 10))
-        self.found_street.label_text = self.canvas.label
