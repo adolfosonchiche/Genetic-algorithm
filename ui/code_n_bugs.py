@@ -1,9 +1,15 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox
+
+from back.ag.genetic_algorithm import GeneticAlgorithm
+from back.ag.model_ag_config import ModelAgConfig
 from back.file.file_ag import FileAg
 from back.file.load_model import LoadModel
 from back.node import Node
 from tkinter import filedialog
+
+from ui.config_ag import ConfigAg
+from ui.draw.line_ob import LineOb
 
 
 class CodeNBugs(tk.Tk):
@@ -11,18 +17,29 @@ class CodeNBugs(tk.Tk):
         super().__init__()
         self.countNode = 1
         self.title("Code 'n Bugs")
-        self.canvas = tk.Canvas(self, width=800, height=600, bg="white")
-        self.canvas.pack()
+
         self.nodes = []
         self.new_node = None
         self.connecting_node = None
         self.connection_input = False
         self.event_input = None
 
+        self.canvas = tk.Canvas(self, width=1300, height=600, bg="white")
+        self.canvas.pack()
+        # Crear la barra de desplazamiento vertical
+        self.scrollbar_y = tk.Scrollbar(self, orient=tk.VERTICAL, command=self.canvas.yview)
+        self.scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.scrollbar_x = tk.Scrollbar(self, orient=tk.HORIZONTAL, command=self.canvas.xview)
+        self.scrollbar_x.pack(side=tk.RIGHT, fill=tk.X)
+
+        # Configurar el lienzo para usar la barra de desplazamiento
+        self.canvas.configure(yscrollcommand=self.scrollbar_y.set, xscrollcommand=self.scrollbar_x.set)
+        self.canvas.bind('<Configure>', lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
         self.menubar = tk.Menu(self)
-        self.node_menu = tk.Menu(self.menubar)
-        self.node_menu.add_command(label="Agregar Nodo", command=self.create_new_node)
-        self.menubar.add_cascade(label="Nodos", menu=self.node_menu)
+        #self.node_menu = tk.Menu(self.menubar)
+        #self.node_menu.add_command(label="Agregar Nodo", command=self.create_new_node)
+        #self.menubar.add_cascade(label="Nodos", menu=self.node_menu)
 
         self.file_menu = tk.Menu(self.menubar)
         self.file_menu.add_command(label="Reiniciar", command=self.reset)
@@ -40,6 +57,13 @@ class CodeNBugs(tk.Tk):
         self.canvas.bind("<B1-Motion>", self.move_node)
         self.canvas.bind("<Shift-Button-1>", self.start_connecting_nodes)
         self.canvas.bind("<Shift-Button-3>", self.stop_connecting_nodes)
+
+        self.button_add_node = tk.Button(self, text="Agregar nodo", command=self.create_new_node)
+        self.button_add_node.pack(pady=10, padx=10, side=tk.LEFT)
+        self.button_run = tk.Button(self, text="Ejecutar", command=self.run)
+        self.button_run.pack(pady=10, padx=10, side=tk.LEFT)
+        self.button_pause = tk.Button(self, text="Finalizar ejecución", command=self.run)
+        self.button_pause.pack(pady=10, padx=10, side=tk.LEFT)
 
     def save_canvas(self):
         file_ag = FileAg()
@@ -160,5 +184,22 @@ class CodeNBugs(tk.Tk):
         self.countNode = 1
 
     def run(self):
+        model_ag = ModelAgConfig()
+        dialog = ConfigAg(self.canvas.master, model_ag)
+        self.canvas.wait_window(dialog)
+        print(model_ag)
+        ag = GeneticAlgorithm(model_ag, self.nodes)
+        populations = ag.run_genetic_algorithm()
+        print('yyy')
+        print(populations[0].population)
+        line_ob = LineOb()
+        for index, population in enumerate(populations):
+            print('dd e ds')
+            for street 
+            cars = population.population[index]
+            population.street[index].cars = cars[index]
+            line_ob.draw_label_line(population.street[index].min_capacity, population.street[index].max_capacity
+                                    , population.street[index], self.canvas, population.street[index].line)
+
         # Aquí puedes agregar la lógica para ejecutar el programa
-        messagebox.showinfo("Ejecución", "Se ha ejecutado el programa.")
+        #messagebox.showinfo("Ejecución", "Se ha ejecutado el programa.")

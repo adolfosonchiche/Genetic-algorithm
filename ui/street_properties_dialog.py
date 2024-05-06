@@ -1,7 +1,4 @@
 import tkinter as tk
-from tkinter import simpledialog, messagebox
-
-from back.street import Street
 
 
 class StreetProperties(tk.Toplevel):
@@ -29,10 +26,10 @@ class StreetProperties(tk.Toplevel):
         self.entry_min_capacity = tk.Entry(self.frame)
         self.entry_min_capacity.grid(row=1, column=1)
 
-        self.label_traffic_lights = tk.Label(self.frame, text="Porcentaje de semaforo:")
-        self.label_traffic_lights.grid(row=2, column=0, sticky="e")
-        self.entry_traffic_lights = tk.Entry(self.frame)
-        self.entry_traffic_lights.grid(row=2, column=1)
+        #self.label_traffic_lights = tk.Label(self.frame, text="Porcentaje de semaforo:")
+        #self.label_traffic_lights.grid(row=2, column=0, sticky="e")
+        #self.entry_traffic_lights = tk.Entry(self.frame)
+        #self.entry_traffic_lights.grid(row=2, column=1)
 
         if not self.found_street.its_connection and self.found_street.its_input:
             self.label_max_cars = tk.Label(self.frame, text="Carros Iniciales:")
@@ -48,7 +45,7 @@ class StreetProperties(tk.Toplevel):
             print(f"Se encontró el Street con other_node: {self.found_street.other_node}")
             self.entry_max_capacity.insert(0, str(self.found_street.max_capacity))
             self.entry_min_capacity.insert(0, str(self.found_street.min_capacity))
-            self.entry_traffic_lights.insert(0, str(self.found_street.traffic_lights))
+            #self.entry_traffic_lights.insert(0, str(self.found_street.traffic_lights))
             # Aquí puedes acceder a los demás atributos del objeto Street encontrado
         else:
             print("No se encontró ningún Street con ese other_node")
@@ -59,8 +56,8 @@ class StreetProperties(tk.Toplevel):
         if self.found_street:
             print(f"Se encontró el Street con other_node: {self.found_street.other_node}")
             self.found_street.min_capacity = self.entry_min_capacity.get()
-            self.found_street.max_capacity = self.entry_traffic_lights.get()
-            self.found_street.traffic_lights = self.entry_max_capacity.get()
+            self.found_street.max_capacity = self.entry_max_capacity.get()
+            #self.found_street.traffic_lights = self.entry_traffic_lights.get()
             if not self.found_street.its_connection and self.found_street.its_input:
                 self.found_street.cars = self.entry_max_cars.get()
             self.line_obj.draw_label_line(self.found_street.min_capacity, self.found_street.max_capacity
