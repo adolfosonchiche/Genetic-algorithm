@@ -5,6 +5,8 @@ class Street:
     def __init__(self, other_node, its_input, its_output, its_connection, min_capacity,
                  max_capacity, traffic_lights, line, x1, y1, x2, y2, id_street):
         self.other_node = other_node
+        if self.other_node is not None:
+            self.other_connections = other_node.connections
         self.cars = 0
         self.max_car = 0
         self.its_input = its_input

@@ -8,6 +8,7 @@ from back.file.load_model import LoadModel
 from back.node import Node
 from tkinter import filedialog
 
+from back.street import Street
 from ui.config_ag import ConfigAg
 from ui.draw.line_ob import LineOb
 
@@ -193,13 +194,46 @@ class CodeNBugs(tk.Tk):
         print('yyy')
         print(populations[0].population)
         line_ob = LineOb()
-        for index, population in enumerate(populations):
+        for population in populations:
             print('dd e ds')
-            for street 
-            cars = population.population[index]
-            population.street[index].cars = cars[index]
-            line_ob.draw_label_line(population.street[index].min_capacity, population.street[index].max_capacity
-                                    , population.street[index], self.canvas, population.street[index].line)
+            cars = 0
+            for street in population.street:
+                if ((not street.its_output and street.its_input and street.its_connection) or
+                        (not street.its_connection and not street.its_output and street.its_input)):
+                    #other_street = self.find_street_by_connections(street.other_node.connections, street.id_street, street.line)
+                    print("cars")
+                    cars = cars + int(street.cars)
+                    if street.other_node is not None:
+                        print("is other street")
+                        other_street = street.other_connections
+                        other_str = self.find_street_by_connections(other_street, street.id_street, street.line)
+                        print("hola mundo " + str(other_str.cars))
+                        cars = cars + int(other_str.cars)
+
+            print('cars ' + str(cars))
+
+            for index, street in enumerate(population.street):
+                if ((not street.its_input and street.its_output and street.its_connection) or
+                        (not street.its_connection and (street.its_input or street.its_output))):
+                    traffic = population.population[index]
+                    street.traffic_lights = traffic[index]
+                    porcentaje = int(street.traffic_lights) / 100
+                    result = round(int(cars) * porcentaje)
+                    street.cars = result
+                    if street.other_node is not None:
+                        other_street = street.other_connections
+                        print(other_street[0].cars)
+                    #other_street.cars = result
+                    print("cars in street: " + str(result))
+                    line_ob.draw_label_line(street.min_capacity, street.max_capacity
+                                            , street, self.canvas, street.line)
 
         # Aquí puedes agregar la lógica para ejecutar el programa
         #messagebox.showinfo("Ejecución", "Se ha ejecutado el programa.")
+
+    @staticmethod
+    def find_street_by_connections(connections, id_street, line):
+        street = next(
+            (street for street in connections if isinstance(street, Street) and (street.id_street == id_street)),
+            None)
+        return street

@@ -1,5 +1,3 @@
-
-
 class LineOb:
     def __init__(self):
         print("ff")
@@ -15,12 +13,19 @@ class LineOb:
 
     @staticmethod
     def draw_label_line(min_capacity, max_capacity, street, canvas, line):
+        #if line:
         x1, y1, x2, y2 = canvas.coords(line)
+        # else:
+        #     x1 = street.x1
+        #     y1 = street.y1
+        #     x2 = street.x2
+        #     y2 = street.y2
+
         x_center = (x1 + x2) / 2
         y_center = (y1 + y2) / 2
         label_text = f"min: {min_capacity}\n máx: {max_capacity} \n car: {street.cars} \n traffic%: {street.traffic_lights}"
 
-        if street.label_text:
+        if street.label_text is not None:
             canvas.delete(street.label_text)
         canvas.label = canvas.create_text(x_center, y_center, text=label_text, font=("Arial", 10), )
         street.label_text = canvas.label
