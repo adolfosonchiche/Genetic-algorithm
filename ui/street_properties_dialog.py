@@ -37,6 +37,7 @@ class StreetProperties(tk.Toplevel):
             self.entry_max_cars = tk.Entry(self.frame)
             self.entry_max_cars.grid(row=3, column=1)
             self.entry_max_cars.insert(0, str(self.found_street.cars))
+            self.found_street.traffic_lights = 100
 
         self.button_save = tk.Button(self, text="Guardar", command=self.save_properties)
         self.button_save.pack(pady=10)
